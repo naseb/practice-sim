@@ -24,9 +24,11 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, maxRetries = 4) {
         err?.message?.includes("503") ||
         err?.message?.includes("high demand") ||
         err?.message?.includes("RESOURCE_EXHAUSTED") ||
+        err?.message?.includes("UNAVAILABLE") ||
         err?.status === 503;
+
       if (isTransient && attempt < maxRetries) {
-        const delay = attempt * 2000;
+        const delay = attempt * 1500;
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -152,8 +154,14 @@ Evaluate Danielle's latest turn now according to the 4 Sales-Translation Pillars
     return NextResponse.json(evaluationData);
   } catch (error: unknown) {
     console.error("Error in /api/evaluate:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal Server Error";
+    let errorMessage = "Internal Server Error";
+    if (error instanceof Error) {
+      if (error.message.includes("503") || error.message.includes("high demand")) {
+        errorMessage = "Google AI service is experiencing a brief demand surge. Please resend your message in a moment.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

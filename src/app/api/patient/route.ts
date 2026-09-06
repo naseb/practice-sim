@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { getScenarioById } from "@/data/scenarios";
 
-async function generateWithRetry(ai: GoogleGenAI, params: any, maxRetries = 3) {
+async function generateWithRetry(ai: GoogleGenAI, params: any, maxRetries = 4) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await ai.models.generateContent(params);
@@ -11,9 +11,12 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, maxRetries = 3) {
         err?.message?.includes("503") ||
         err?.message?.includes("high demand") ||
         err?.message?.includes("RESOURCE_EXHAUSTED") ||
+        err?.message?.includes("UNAVAILABLE") ||
         err?.status === 503;
+
       if (isTransient && attempt < maxRetries) {
-        const delay = attempt * 1000;
+        // Exponential backoff: 1.5s, 3s, 5s
+        const delay = attempt * 1500;
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -71,8 +74,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ response: reply });
   } catch (error: unknown) {
     console.error("Error in /api/patient:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal Server Error";
+    let errorMessage = "Internal Server Error";
+    if (error instanceof Error) {
+      if (error.message.includes("503") || error.message.includes("high demand")) {
+        errorMessage = "Google AI service is experiencing a brief demand surge. Please resend your message in a moment.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
