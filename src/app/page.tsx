@@ -127,8 +127,7 @@ export default function Home() {
 
     // Call Patient simulation API
     setIsLoadingPatient(true);
-    const BASE_PATH = "/practice";
-    const patientPromise = fetch(`${BASE_PATH}/api/patient`, {
+    const patientPromise = fetch("/api/patient", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -163,7 +162,7 @@ export default function Home() {
         const errorReply: Message = {
           id: `msg-${Date.now() + 1}`,
           role: "assistant",
-          content: `(System Note: Unable to generate patient response. Please verify that GEMINI_API_KEY is configured in .env.local: ${err.message})`,
+          content: `(System Note: Unable to generate patient response: ${err.message})`,
           timestamp: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -177,7 +176,7 @@ export default function Home() {
 
     // Call Evaluator API concurrently
     setIsLoadingEvaluation(true);
-    const evaluatePromise = fetch(`${BASE_PATH}/api/evaluate`, {
+    const evaluatePromise = fetch("/api/evaluate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
