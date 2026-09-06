@@ -127,7 +127,8 @@ export default function Home() {
 
     // Call Patient simulation API
     setIsLoadingPatient(true);
-    const patientPromise = fetch("/api/patient", {
+    const BASE_PATH = "/practice";
+    const patientPromise = fetch(`${BASE_PATH}/api/patient`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -176,7 +177,7 @@ export default function Home() {
 
     // Call Evaluator API concurrently
     setIsLoadingEvaluation(true);
-    const evaluatePromise = fetch("/api/evaluate", {
+    const evaluatePromise = fetch(`${BASE_PATH}/api/evaluate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
